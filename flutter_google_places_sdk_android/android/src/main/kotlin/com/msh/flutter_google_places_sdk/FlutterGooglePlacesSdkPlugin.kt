@@ -123,6 +123,26 @@ class FlutterGooglePlacesSdkPlugin : FlutterPlugin, MethodCallHandler {
                     }
                 }
             }
+            METHOD_FIND_CURRENT_PLACE -> {
+                val fields = call.argument<List<String>>("fields")?.map { placeFieldFromStr(it) }
+                    ?: emptyList()
+                val request = FindCurrentPlaceRequest.builder(fields)
+                    .build()
+                client.findCurrentPlace(request).addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        val likelihoods = likelihoodsToList(task.result)
+                        print("FindCurrentPlace Result: $likelihoods")
+                        result.success(likelihoods)
+                    } else {
+                        val exception = task.exception
+                        print("FindCurrentPlace Exception: $exception")
+                        result.error(
+                            "API_ERROR_PLACE", exception?.message ?: "Unknown exception",
+                            mapOf("type" to (exception?.javaClass?.toString() ?: "null"))
+                        )
+                    }
+                }
+            }
             METHOD_FETCH_PLACE_PHOTO -> {
                 val photoMetadata =
                     photoMetadataFromMap(call.argument<Map<String, Any?>>("photoMetadata")!!)
@@ -247,6 +267,25 @@ class FlutterGooglePlacesSdkPlugin : FlutterPlugin, MethodCallHandler {
         }
 
         return result.autocompletePredictions.map { item -> predictionToMap(item) }
+    }
+
+    private fun likelihoodsToList(result: FindCurrentPlaceResponse?): List<Map<String, Any?>>? {
+        if (result == null) {
+            return null
+        }
+
+        return result.placeLikelihoods.map {item -> likelihoodToMap(item)}
+    }
+
+    private fun likelihoodToMap(likelihood: PlaceLikelihood?): Map<String, Any?> {
+        if (likelihood == null) {
+            return emptyMap()
+        }
+
+        return mapOf(
+            "place" to placeToMap(likelihood.place),
+            "likelihood" to likelihood.likelihood
+        )
     }
 
     private fun placeToMap(place: Place?): Map<String, Any?> {
@@ -437,6 +476,7 @@ class FlutterGooglePlacesSdkPlugin : FlutterPlugin, MethodCallHandler {
         private const val METHOD_IS_INITIALIZE = "isInitialized"
         private const val METHOD_FIND_AUTOCOMPLETE_PREDICTIONS = "findAutocompletePredictions"
         private const val METHOD_FETCH_PLACE = "fetchPlace"
+        private const val METHOD_FIND_CURRENT_PLACE = "findCurrentPlace"
         private const val METHOD_FETCH_PLACE_PHOTO = "fetchPlacePhoto"
 
         const val CHANNEL_NAME = "plugins.msh.com/flutter_google_places_sdk"

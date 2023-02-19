@@ -9,6 +9,7 @@ public class SwiftFlutterGooglePlacesSdkIosPlugin: NSObject, FlutterPlugin {
     let METHOD_IS_INITIALIZE = "isInitialized"
     let METHOD_FIND_AUTOCOMPLETE_PREDICTIONS = "findAutocompletePredictions"
     let METHOD_FETCH_PLACE = "fetchPlace"
+    let METHOD_FIND_CURRENT_PLACE = "findCurrentPlace"
     let METHOD_FETCH_PLACE_PHOTO = "fetchPlacePhoto"
     
     private var placesClient: GMSPlacesClient!
@@ -97,6 +98,28 @@ public class SwiftFlutterGooglePlacesSdkIosPlugin: NSObject, FlutterPlugin {
                     result(mappedPlace)
                 }
             }
+        case METHOD_FIND_CURRENT_PLACE:
+            let args = call.arguments as! Dictionary<String,Any>
+            let fields = ((args["fields"] as? [String])?.map {
+                (item) in return placeFieldFromStr(it: item)
+            })?.reduce(GMSPlaceField(), { partialResult, field in
+                return GMSPlaceField(rawValue: partialResult.rawValue | field.rawValue)
+            })
+            
+            placesClient.findCurrentPlace(placeFields: fields ?? GMSPlaceField.all)
+                                    { (likelihoods, error) in
+                if let error = error {
+                    print("findCurrentPlace error: \(error)")
+                    result(FlutterError(
+                        code: "API_ERROR",
+                        message: error.localizedDescription,
+                        details: nil
+                    ))
+                } else {
+                    let mappedLikelihoods = self.likelihoodsToList(result: likelihoods.result)
+                    result(mappedLikelihoods)
+                }
+        }
         case METHOD_FETCH_PLACE_PHOTO:
             let args = call.arguments as! Dictionary<String,Any>
             let photoMetadataMap = args["photoMetadata"] as! Dictionary<String,Any>
@@ -148,6 +171,15 @@ public class SwiftFlutterGooglePlacesSdkIosPlugin: NSObject, FlutterPlugin {
         default:
             return GMSPlacesAutocompleteTypeFilter.noFilter
         }
+    }
+
+    private func likelihoodsToList(result: [GMSPlaceLikelihood]?) -> [Dictionary<String, Any?>]? {
+        guard let results = results else {
+            return nil;
+        }
+
+        return results.map { (likelihood: GMSPlaceLikelihood) in 
+            return likelihoodToMap(likelihood: likelihood) }
     }
     
     private func placeToMap(place: GMSPlace?) -> Dictionary<String, Any?> {
@@ -323,6 +355,13 @@ public class SwiftFlutterGooglePlacesSdkIosPlugin: NSObject, FlutterPlugin {
             "primaryText": prediction.attributedPrimaryText.string,
             "secondaryText": prediction.attributedSecondaryText?.string ?? "",
             "fullText": prediction.attributedFullText.string
+        ];
+    }
+
+    private func likelihoodToMap(likelihood: GMSPlaceLikelihood) -> Dictionary<String, Any?> {
+        return [
+            "place": placeToMap(likelihood.place),
+            "likelihood": likelihood.likelihood
         ];
     }
 

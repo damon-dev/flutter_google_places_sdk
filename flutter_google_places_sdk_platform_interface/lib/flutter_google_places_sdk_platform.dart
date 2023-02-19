@@ -104,6 +104,18 @@ abstract class FlutterGooglePlacesSdkPlatform extends PlatformInterface {
     throw UnimplementedError('fetchPlaceDetails() has not been implemented.');
   }
 
+  /// Fetches the likelihoods of a place being current place.
+  /// Only the requested [fields] will be returned. If none specified,
+  /// all fields will be returned.
+  ///
+  /// Note that different fields can incur different billing.
+  ///
+  /// For more info about billing: https://developers.google.com/maps/documentation/places/web-service/usage-and-billing
+  Future<FindCurrentPlaceResponse> findCurrentPlace(
+      {required List<PlaceField> fields}) {
+    throw UnimplementedError('findCurrentPlace() has not been implemented.');
+  }
+
   /// Fetches a photo of a place.
   ///
   /// Before fetching a place photo the place it self must be fetched,

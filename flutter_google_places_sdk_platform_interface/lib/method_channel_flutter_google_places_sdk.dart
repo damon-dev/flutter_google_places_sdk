@@ -33,15 +33,16 @@ class FlutterGooglePlacesSdkMethodChannel
     return _invokeForSettings('updateSettings', apiKey, locale);
   }
 
-  Future<void> _invokeForSettings(String methodName, String apiKey, Locale? locale) {
+  Future<void> _invokeForSettings(
+      String methodName, String apiKey, Locale? locale) {
     return _channel.invokeMethod<void>(methodName, {
       'apiKey': apiKey,
       'locale': locale == null
           ? null
           : {
-        'country': locale.countryCode,
-        'language': locale.languageCode,
-      },
+              'country': locale.countryCode,
+              'language': locale.languageCode,
+            },
     });
   }
 
@@ -105,6 +106,26 @@ class FlutterGooglePlacesSdkMethodChannel
     final Place? place =
         value == null ? null : Place.fromJson(value.cast<String, dynamic>());
     return FetchPlaceResponse(place);
+  }
+
+  @override
+  Future<FindCurrentPlaceResponse> findCurrentPlace(
+      {required List<PlaceField> fields}) {
+    return _channel.invokeListMethod<Map<dynamic, dynamic>>(
+      'findCurrentPlace',
+      {'fields': fields.map((e) => e.value).toList()},
+    ).then(_responseFromCurrentPlace);
+  }
+
+  FindCurrentPlaceResponse _responseFromCurrentPlace(
+    List<Map<dynamic, dynamic>>? value,
+  ) {
+    final items = value
+            ?.map((item) => item.cast<String, dynamic>())
+            .map((map) => PlaceLikelihood.fromJson(map))
+            .toList(growable: false) ??
+        [];
+    return FindCurrentPlaceResponse(items);
   }
 
   @override

@@ -13,6 +13,7 @@ export 'package:flutter_google_places_sdk_platform_interface/flutter_google_plac
         DayOfWeek,
         DayOfWeekDescriptor,
         DayOfWeekEnumParser,
+        FindCurrentPlaceResponse,
         FetchPlaceResponse,
         FetchPlacePhotoResponse,
         FindAutocompletePredictionsResponse,
@@ -147,6 +148,18 @@ class FlutterGooglePlacesSdk {
   Future<FetchPlaceResponse> fetchPlace(String placeId,
       {required List<PlaceField> fields}) {
     return _addMethodCall(() => platform.fetchPlace(placeId, fields: fields));
+  }
+
+  /// Fetches the likelihoods of a place being current place.
+  /// Only the requested [fields] will be returned. If none specified,
+  /// all fields will be returned.
+  ///
+  /// Note that different fields can incur different billing.
+  ///
+  /// For more info about billing: https://developers.google.com/maps/documentation/places/web-service/usage-and-billing
+  Future<FindCurrentPlaceResponse> findCurrentPlace(
+      {required List<PlaceField> fields}) {
+    return _addMethodCall(() => platform.findCurrentPlace(fields: fields));
   }
 
   /// Fetches a photo of a place.
